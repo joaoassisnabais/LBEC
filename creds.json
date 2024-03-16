@@ -1,0 +1,7 @@
+{
+    "DB_HOST": "localhost",
+    "DB_USER": "nabais" ,
+    "DB_DATABASE": "home",
+    "DB_PASSWORD": "piece0fMind",
+    "APPKEY":  "lbechome123"
+}
