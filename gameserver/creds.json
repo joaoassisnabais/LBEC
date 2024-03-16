@@ -1,0 +1,7 @@
+{
+    "DB_HOST": "localhost",
+    "DB_USER": "rui" ,
+    "DB_DATABASE": "game",
+    "DB_PASSWORD": "piece0fMind",
+    "APPKEY":  "leicgame321"
+}

@@ -1,0 +1,12 @@
+[Thu Sep 29 13:40:54.877922 2022] [authz_core:error] [pid 5760:tid 2981086208] [client 85.138.78.7:1024] AH01630: client denied by server configuration: /home/ruipires/Game/static/
+[Thu Sep 29 13:41:20.015534 2022] [authz_core:error] [pid 5761:tid 3041915904] [client 85.138.78.7:1024] AH01630: client denied by server configuration: /home/ruipires/Game/static/
+[Thu Sep 29 13:47:47.965651 2022] [authz_core:error] [pid 5974:tid 3042964480] [client 85.138.78.7:1024] AH01630: client denied by server configuration: /home/ruipires/Game/static/
+[Thu Sep 29 13:48:02.063813 2022] [authz_core:error] [pid 5975:tid 3042964480] [client 85.138.78.7:1024] AH01630: client denied by server configuration: /home/ruipires/Game/static/
+[Thu Sep 29 13:48:38.963027 2022] [authz_core:error] [pid 6093:tid 3033523200] [client 85.138.78.7:1024] AH01630: client denied by server configuration: /home/ruipires/Game/static/
+[Thu Sep 29 13:49:34.462566 2022] [authz_core:error] [pid 6093:tid 3033523200] [client 85.138.78.7:1024] AH01630: client denied by server configuration: /home/ruipires/Game/static/
+[Thu Sep 29 13:49:40.457986 2022] [authz_core:error] [pid 6194:tid 3041915904] [client 85.138.78.7:1024] AH01630: client denied by server configuration: /static
+[Thu Sep 29 13:50:01.791164 2022] [authz_core:error] [pid 6285:tid 3041915904] [client 85.138.78.7:1024] AH01630: client denied by server configuration: /static
+[Thu Sep 29 13:51:26.325752 2022] [autoindex:error] [pid 6403:tid 3042964480] [client 85.138.78.7:1024] AH01276: Cannot serve directory /home/ruipires/Game/static/: No matching DirectoryIndex (index.html,index.cgi,index.pl,index.php,index.xhtml,index.htm) found, and server-generated directory index forbidden by Options directive
+[Thu Sep 29 13:51:42.450789 2022] [authz_core:error] [pid 6496:tid 3041915904] [client 85.138.78.7:1024] AH01630: client denied by server configuration: /static
+[Thu Sep 29 13:53:05.503447 2022] [authz_core:error] [pid 6594:tid 3004163072] [client 85.138.78.7:1024] AH01630: client denied by server configuration: /static
+[Thu Sep 29 13:53:33.531670 2022] [authz_core:error] [pid 6695:tid 3042964480] [client 85.138.78.7:1024] AH01630: client denied by server configuration: /static
