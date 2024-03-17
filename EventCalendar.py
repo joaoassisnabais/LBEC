@@ -37,6 +37,9 @@ class Calendar:
     
     def get_key(self, event):
         return (event.date.month,event.date.day)
+    
+    def get_events(self, date):
+        return self.events[date.month, date.day]
       
 
         
