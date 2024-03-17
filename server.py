@@ -1,6 +1,9 @@
 import os
 import jwt
 import sqlite3
+import time
+import threading
+from emails import Send_Email
 from functools import wraps
 from urllib.parse import parse_qs
 from hashlib import sha256
@@ -9,6 +12,7 @@ from flask import Flask, request, jsonify
 from consumption import Consumption
 from tokens import TokenDto
 from ideal import ideal_consumption
+from EventCalendar import Calendar, Event
 
 app = Flask(__name__)
 
@@ -439,6 +443,40 @@ def manage_calendar(id):
     
     return "Method not implemented", 501
 
+def email_reminder():
+    while True:
+        conn = sqlite3.connect(DATABASENAME)
+        cursor = conn.cursor()
+        current_time = datetime.now()        
+        try:
+            res = query(cursor, "SELECT * FROM events")
+        except Exception as e:
+            pass
+        
+        user_calendars = {}
+        for row in res:
+            user = row[0]
+            date = datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
+            title = row[2]
+            description = row[3]
+            
+            if user not in user_calendars:
+                user_calendars[user] = Calendar()
+            user_calendars[user].add_event(Event(title, date, description))
+            
+        for user, calendar in user_calendars.items():
+            aux = Send_Email(calendar, current_time)
+            try:
+                res = query(cursor, "SELECT email FROM users WHERE username = (\'%s\')", (user))
+            except Exception as e:
+                pass
+            Send_Email.send_reminder_emails(aux, recipient_email=res[0][0])
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        time.sleep(3600*24)  # Sleep for 24 hour
+
 if __name__ == '__main__':
     SCHEMANAME = os.path.dirname(os.path.realpath(__file__)) + "/schema.sql"
     
@@ -450,5 +488,8 @@ if __name__ == '__main__':
 
             connection.commit()
             connection.close()
+    
+    send_email_thread = threading.Thread(target=email_reminder)
+    send_email_thread.start()
             
     app.run(debug=True)

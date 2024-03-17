@@ -1,5 +1,5 @@
 
-class send_email():
+class Send_Email():
     def __init__(self, calendar, date):
         self.calendar = calendar
         self.date = date
@@ -17,10 +17,9 @@ class send_email():
             recipient_email (str, optional): The email address of the recipient. Defaults to "recipient@example.com".
         """
 
-        events_within_hour = self.get_events_within_hour()
+        events_within_hour = self.get_events_within_a_day()
         
         if not events_within_hour:
-            print("No events found within the next hour.")
             return
         
         # Import smtplib for email sending (assuming it's not already imported)
@@ -40,11 +39,11 @@ class send_email():
             server.login(sender_email, password)  # Login with credentials
             server.sendmail(sender_email, recipient_email, message.encode())  # Send email
     
-    def get_events_within_hour(self):
+    def get_events_within_a_day(self):
         events_today = self.calendar.get_events(self.date)
         remind = []
         for event in events_today:
-            if event.date.hour <= self.date.hour + 1:
+            if event.date.hour <= self.date.hour + 24:
                 remind.append(event)  
         return remind
 
