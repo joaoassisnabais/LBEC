@@ -64,7 +64,6 @@ class Consumption_Type:
     def to_json(self):
         return {
             "amount": self.amount,
-            "at_home": self.at_home
         }
     
 class Consumption:

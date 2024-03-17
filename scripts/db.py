@@ -1,3 +1,3 @@
 import subprocess
 
-subprocess.run(["psql", "-U", "rui", "-d", "game"])
+subprocess.run(["psql", "-U", "nabais", "-d", "home"])
