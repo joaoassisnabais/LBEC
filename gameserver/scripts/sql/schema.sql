@@ -1,8 +1,6 @@
 drop table users CASCADE;
-drop table admins CASCADE;
-drop table actions CASCADE;
-drop table games CASCADE;
-drop table game_players CASCADE;
+drop table consumptions CASCADE;
+drop table events CASCADE;
 
 create table users (
     name varchar(255),
@@ -11,25 +9,24 @@ create table users (
     primary key(name)
 );
 
-create table admins (
-    name varchar(255),
+create table consumptions (
+    username varchar(255),
+    area varchar(255),
+    timestamp DATE NOT NULL DEFAULT CURRENT_DATE,
+    energy float,
+    water float,
+    gas float,
 
-    primary key(name),
-    foreign key(name) references users(name)
+    primary key(area),
+    foreign key(username) references users(name)
 );
 
-create table actions (
-    player varchar(255),
-    day integer,
-
-    primary key(player, day),
-    foreign key(player) references users(name)
-);
-
-create table games (
-    name varchar(255),
+create table events (
     created_by varchar(255),
-    creation_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    timestamp DATE NOT NULL DEFAULT CURRENT_DATE,
+    description varchar(255),
+    title varchar(255),
+    
     primary key(name),
     foreign key(created_by) references users(name)
 );
