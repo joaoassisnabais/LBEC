@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from flask import Flask, request, jsonify
 from consumption import Consumption
 from tokens import TokenDto
+from ideal import ideal_consumption
 
 app = Flask(__name__)
 
@@ -76,6 +77,30 @@ def token_required(f):
 
         return f(id=username, *args, **kwargs)
     return token_dec
+
+@app.route('/consumptions/optimal', methods=['GET'])
+@token_required
+def get_optimal_consumption(id):
+    conn = sqlite3.connect(DATABASENAME)
+    cursor = conn.cursor()
+    
+    request_data = parse_qs(request.get_data().decode('utf-8'))
+    current_temp = request_data.get('current_temp', [])[0]
+    not_at_home = request_data.get('not_at_home', [])[0]
+    if not_at_home == 0:
+        not_at_home = False
+    else:
+        not_at_home = True
+    
+    try:
+        res = query(cursor, 'SELECT temp_max, temp_min FROM users WHERE username=(\'%s\')', (id))
+        temp_max = res[0][0]
+        temp_min = res[0][1]
+        
+    except Exception as e:
+        return "User '%s' with difficulties" % id, 400
+    
+    return str(ideal_consumption(temp_min, temp_max, not_at_home, current_temp, 20))
 
 @app.route('/consumptions/<area_name>/month', methods=['GET']) #DONE-TESTED
 @token_required
