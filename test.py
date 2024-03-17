@@ -6,7 +6,7 @@ from datetime import date, datetime
 
 event1 = Event("Meeting", datetime(2024, 3, 17, 5), "Project discussion")
 
-event2 = Event("Ronaldo", datetime(2024, 3, 17, 6), "LBEC")
+event2 = Event("Ronaldo", datetime(2024, 3, 17, 5, 30), "LBEC")
 
 event3 = Event("Beira Interior", datetime(2024, 4, 24), "Maranho")
 
