@@ -5,7 +5,10 @@ drop table if exists events;
 -- Create the User table
 CREATE TABLE users (
   username VARCHAR(255) UNIQUE NOT NULL,
-  pass VARCHAR(255) NOT NULL
+  pass VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  temp_max FLOAT NOT NULL DEFAULT 24.0,
+  temp_min FLOAT NOT NULL DEFAULT 20.0
 );
 
 -- Create the Consumption table

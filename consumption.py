@@ -1,7 +1,5 @@
 from datetime import datetime
 
-from datetime import datetime
-
 def timestamp_to_string(timestamp, format="%Y-%m-%d %H:%M:%S"):
   """
   Converts a timestamp (either a Unix timestamp in seconds or a Python datetime object)
@@ -53,7 +51,7 @@ class Water(Resource):
         super().__init__(price_per_unit, unit_type)
 
 class Gas(Resource):
-    def __init__(self, price_per_unit = 0.11270, unit_type = 'kwh'):
+    def __init__(self, price_per_unit = 0.1127, unit_type = 'kwh'):
         super().__init__(price_per_unit, unit_type)
     
 class Consumption_Type:
@@ -64,22 +62,25 @@ class Consumption_Type:
     def to_json(self):
         return {
             "amount": self.amount,
+            "units": self.resource.unit_type,
+            "price_per_unit": self.resource.price_per_unit
         }
     
 class Consumption:
-    def __init__(self, area, amount=0, at_home=True):
+    def __init__(self, area, energy=0, water=0, gas=0 , at_home=True, timestamp=datetime.now()):
         self.area = area
-        self.timestamp = datetime.now()
+        self.timestamp = timestamp
         self.at_home = at_home
-        self.resources = {
-            "energy": Consumption_Type(Energy(), amount, at_home),
-            "water": Consumption_Type(Water(), amount, at_home),
-            "gas": Consumption_Type(Gas(), amount, at_home),
-            }
+        self.energy = Consumption_Type(Energy(), energy, at_home)
+        self.water = Consumption_Type(Water(), water, at_home)
+        self.gas = Consumption_Type(Gas(), gas, at_home)
+
         
     def to_json(self):
         return {
             "area": self.area,
             "timestamp": timestamp_to_string(self.timestamp),
-            "resources": {key: value.to_json() for key, value in self.resources.items()}
+            "energy": self.energy.to_json,
+            "water": self.water.to_json,
+            "gas": self.gas.to_json,
         }

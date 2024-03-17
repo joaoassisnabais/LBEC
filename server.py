@@ -6,12 +6,27 @@ from urllib.parse import parse_qs
 from hashlib import sha256
 from datetime import datetime, timedelta, timezone
 from flask import Flask, request, jsonify
-from consumption import Energy, Water, Gas, Consumption, Resource
+from consumption import Consumption
 from tokens import TokenDto
 
 app = Flask(__name__)
 
 DATABASENAME = os.path.dirname(os.path.realpath(__file__)) + "/database.db"
+
+def parse_timestamp():
+    try:
+        request_data = parse_qs(request.get_data().decode('utf-8'))
+        year = request_data.get('year', [])[0]
+        month = request_data.get('month', [])[0]
+        day = request_data.get('day', [])[0]
+        hour = request_data.get('hours', [])[0]
+        minute = 0
+        second = 0
+        req_time = datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))
+        return req_time
+    except Exception as e:
+        pass
+    return None
 
 def query(cursor, string, data = ()):
     res = []
@@ -35,7 +50,7 @@ def user_exists(username):
     conn = sqlite3.connect(DATABASENAME)
     cursor = conn.cursor()
 
-    res = query(cursor, 'SELECT * FROM users WHERE name=(%s)', (username,))
+    res = query(cursor, 'SELECT * FROM users WHERE username=(\'%s\')', (username))
 
     conn.commit()
     cursor.close()
@@ -51,7 +66,7 @@ def token_required(f):
         if not token:
             return "Missing Token!", 400
         try:
-            data = jwt.decode(token, credentials['APPKEY'], algorithms=["HS256"])
+            data = jwt.decode(token, "random_string", algorithms=["HS256"])
         except:
             return "Invalid Token", 400
         
@@ -62,9 +77,9 @@ def token_required(f):
         return f(id=username, *args, **kwargs)
     return token_dec
 
-@app.route('/consumptions/<area_name>', methods=['POST'])
+@app.route('/consumptions/<area_name>/month', methods=['GET']) #DONE-TESTED
 @token_required
-def post_areas(id, area_name):
+def get_consumption_month(id, area_name):
     conn = sqlite3.connect(DATABASENAME)
     cursor = conn.cursor()
 
@@ -72,18 +87,146 @@ def post_areas(id, area_name):
         return "Invalid area name", 400
 
     try:
-        cons = Consumption(area=area_name)
-        query(cursor, 'INSERT INTO consumptions (username, area_name, at_home, energy, water, gas) VALUES (\'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\')',
-                (id, cons.area, cons.at_home, cons.energy.amount, cons.water.amount, cons.gas.amount))
-    
+        format="%F %T"
+        req_time = parse_timestamp()
+        next_month = req_time + timedelta(months=1)
+        req_time = req_time.strftime(format)
+        next_month = next_month.strftime(format)
+        
+        res = query(cursor, 'SELECT * FROM consumptions WHERE USERNAME=(\'%s\') AND AREA_NAME=(\'%s\') AND timestamp <= \'%s\' AND timestamp >= \'%s\' ORDER BY timestamp DESC LIMIT 24',
+                    (id, area_name, next_month, req_time))
+        
     except Exception as e:
-        return "Area '%s' already exists" % area_name, 400
+        return "Area '%s' with difficulties" % area_name, 400
+
+    conn.commit()
+    conn.close()
+    
+    total_energy = sum([row[4] for row in res])
+    total_water = sum([row[5] for row in res])
+    total_gas = sum([row[6] for row in res])
+
+    result = {
+        "total_energy": total_energy,
+        "total_water": total_water,
+        "total_gas": total_gas
+    }
+
+    return jsonify(result), 200
+
+@app.route('/consumptions/<area_name>/week', methods=['GET']) #DONE-TESTED
+@token_required
+def get_consumption_week(id, area_name):
+    conn = sqlite3.connect(DATABASENAME)
+    cursor = conn.cursor()
+
+    if area_name is None:
+        return "Invalid area name", 400
+
+    try:
+        format="%F %T"
+        req_time = parse_timestamp()
+        next_week = req_time + timedelta(days=7)
+        req_time = req_time.strftime(format)
+        next_day = next_week.strftime(format)
+        
+        res = query(cursor, 'SELECT * FROM consumptions WHERE USERNAME=(\'%s\') AND AREA_NAME=(\'%s\') AND timestamp <= \'%s\' AND timestamp >= \'%s\' ORDER BY timestamp DESC LIMIT 24',
+                    (id, area_name, next_week, req_time))
+        
+    except Exception as e:
+        return "Area '%s' with difficulties" % area_name, 400
+
+    conn.commit()
+    conn.close()
+    
+    total_energy = sum([row[4] for row in res])
+    total_water = sum([row[5] for row in res])
+    total_gas = sum([row[6] for row in res])
+
+    result = {
+        "total_energy": total_energy,
+        "total_water": total_water,
+        "total_gas": total_gas
+    }
+
+    return jsonify(result), 200
+
+@app.route('/consumptions/<area_name>/day', methods=['GET']) #DONE-TESTED
+@token_required
+def get_consumption_day(id, area_name):
+    conn = sqlite3.connect(DATABASENAME)
+    cursor = conn.cursor()
+
+    if area_name is None:
+        return "Invalid area name", 400
+
+    try:
+        format="%F %T"
+        req_time = parse_timestamp()
+        next_day = req_time + timedelta(days=1)
+        req_time = req_time.strftime(format)
+        next_day = next_day.strftime(format)
+        
+        res = query(cursor, 'SELECT * FROM consumptions WHERE USERNAME=(\'%s\') AND AREA_NAME=(\'%s\') AND timestamp <= \'%s\' AND timestamp >= \'%s\' ORDER BY timestamp DESC LIMIT 24',
+                    (id, area_name, next_day, req_time))
+        
+    except Exception as e:
+        return "Area '%s' with difficulties" % area_name, 400
+
+    conn.commit()
+    conn.close()
+    
+    total_energy = sum([row[4] for row in res])
+    total_water = sum([row[5] for row in res])
+    total_gas = sum([row[6] for row in res])
+
+    result = {
+        "total_energy": total_energy,
+        "total_water": total_water,
+        "total_gas": total_gas
+    }
+
+    return jsonify(result), 200
+
+@app.route('/consumptions/<area_name>', methods=['POST']) #DONE-TESTED
+@token_required
+def create_consumptions(id, area_name):
+    conn = sqlite3.connect(DATABASENAME)
+    cursor = conn.cursor()
+
+    if area_name is None:
+        return "Invalid area name", 400
+
+    format="%F %T"
+    request_time = parse_timestamp().strftime(format)
+    request_data = parse_qs(request.get_data().decode('utf-8'))
+    energy_amount = request_data.get('energy', [])[0]
+    water_amount = request_data.get('water', [])[0]
+    gas_amount = request_data.get('gas', [])[0]
+    at_home = request_data.get('at_home', [])[0]
+    
+    
+    if request_time is None:
+        try:
+            cons = Consumption(area=area_name)
+            query(cursor, 'INSERT INTO consumptions (username, area_name, at_home, energy, water, gas) VALUES (\'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\')',
+                    (id, cons.area, cons.at_home, cons.energy.amount, cons.water.amount, cons.gas.amount))
+        
+        except Exception as e:
+            return "Area '%s' already exists" % area_name, 400
+    else:
+        try:
+            cons = Consumption(area=area_name, timestamp=request_time, energy=energy_amount, water=water_amount, gas=gas_amount, at_home=at_home)
+            query(cursor, 'INSERT INTO consumptions (username, area_name, at_home, energy, water, gas, timestamp) VALUES (\'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\', \'%s\')',
+                    (id, cons.area, cons.at_home, cons.energy.amount, cons.water.amount, cons.gas.amount, cons.timestamp))
+        except Exception as e:
+            return "Area '%s' already exists" % area_name, 400
 
     conn.commit()
     conn.close()
     return "Ok", 200
 
-@app.route('/consumptions/<area_name>/', methods=['GET'])  
+@app.route('/consumptions/<area_name>/', methods=['GET']) #DONE-TESTED
 @token_required
 def get_consumption(id, area_name):
     conn = sqlite3.connect(DATABASENAME)
@@ -93,10 +236,12 @@ def get_consumption(id, area_name):
         return "Invalid area name", 400
 
     try:
-        cons = Consumption(area=area_name)
-        req_time = request.args.get('requested_time')
-        res = query(cursor, 'SELECT * FROM consumptions WHERE USERNAME=(\'%s\') AND AREA_NAME=(\'%s\') AND timestamp <= %s ORDER BY timestamp DESC LIMIT 1',
-                    (id, cons.area, req_time))
+        format="%F %T"
+        req_time = parse_timestamp().strftime(format)
+        
+        res = query(cursor, 'SELECT * FROM consumptions WHERE USERNAME=(\'%s\') AND AREA_NAME=(\'%s\') AND timestamp <= \'%s\' ORDER BY timestamp DESC LIMIT 1',
+                    (id, area_name, req_time))
+        
     except Exception as e:
         return "Area '%s' already exists" % area_name, 400
 
@@ -110,16 +255,18 @@ def register_user(username):
     cursor = conn.cursor()
 
     request_data = parse_qs(request.get_data().decode('utf-8'))
-    password = request_data.get('pass', [])
-    password = password[0]
-
+    password = request_data.get('pass', [])[0]
+    email = request_data.get('email', [])[0]
+    temp_max = request_data.get('temp_max', [])[0]
+    temp_min = request_data.get('temp_min', [])[0]
+    
     if None in (username, password):
         return "invalid username or password", 400
 
     hashed = hash_password(username, password)
 
     try:
-        query(cursor, 'INSERT INTO users (username, pass) VALUES (\'%s\', \'%s\')', (username, hashed))
+        query(cursor, 'INSERT INTO users (username, pass, email, temp_max, temp_min) VALUES (\'%s\', \'%s\', \'%s\', \'%s\', \'%s\')', (username, hashed, email, temp_max, temp_min))
     except Exception as e:
         return "Username '%s' already exists" % username, 400
 
@@ -128,7 +275,7 @@ def register_user(username):
     conn.close()
     return "Ok", 200
 
-@app.route('/users/<username>', methods=["DELETE"])
+@app.route('/users/', methods=["DELETE"]) #DONE-TESTED
 @token_required
 def delete_user(id):
     conn = sqlite3.connect(DATABASENAME)
@@ -138,7 +285,7 @@ def delete_user(id):
         return "Invalid username", 400
 
     try:
-        query(cursor, 'DELETE FROM users WHERE USERNAME=(\'%s\')', (id))
+        query(cursor, 'DELETE FROM users WHERE username=(\'%s\')', (id))
     except:
         return "Username '%s' cannot be deleted" % id, 400
 
@@ -146,6 +293,27 @@ def delete_user(id):
     cursor.close()
     conn.close()
     return "Ok", 200
+
+@app.route('/users/<username>/temperature', methods=["PUT"]) #DONE-TESTED
+@token_required
+def update_temperature(id, username):
+    conn = sqlite3.connect(DATABASENAME)
+    cursor = conn.cursor()
+
+    request_data = parse_qs(request.get_data().decode('utf-8'))
+    temp_max = request_data.get('temp_max', [])[0]
+    temp_min = request_data.get('temp_min', [])[0]
+    
+    try:
+        query(cursor, 'UPDATE users SET temp_max = \'%s\', temp_min = \'%s\' WHERE username = \'%s\'', (temp_max, temp_min, username))
+    except Exception as e:
+        return "Couldn't change the temperature range", 400
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return "Ok", 200
+    
 
 @app.route('/login/', methods=['GET'])  #DONE-TESTED
 def login():
@@ -172,66 +340,79 @@ def login():
         return TokenDto(token, exp).to_json(), 200
     return "Invalid credentials", 400
 
-@app.route('/calendar/', methods=['GET', 'POST', 'DELETE'])
+@app.route('/events/', methods=['GET', 'POST', 'DELETE'])
 @token_required
 def manage_calendar(id):
 
-    if request.method == 'POST':
+    if request.method == 'POST':    #DONE-TESTED
         conn = sqlite3.connect(DATABASENAME)
         cursor = conn.cursor()
         
-        title = request.form["title"]
-        date = request.form["date"]
-        description = request.form["description"]
+        format="%F %T"
+        date = parse_timestamp().strftime(format)
+        request_data = parse_qs(request.get_data().decode('utf-8'))
+        title = request_data.get('title', [])[0]
+        description = request_data.get('description', [])[0]
         #warning = request.form["warning"]
         
         try:
-            query(cursor, "INSERT INTO calendar (username, date, title, description) VALUES (\'%s\', \'%s\', \'%s\', \'%s\')", (id, date, title, description))
+            query(cursor, "INSERT INTO events (username, date, title, description) VALUES (\'%s\', \'%s\', \'%s\', \'%s\')", (id, date, title, description))
         except Exception as e:
             return "Event already exists", 400
 
         conn.commit()
         cursor.close()
         conn.close()
-        return jsonify({"message": "No calendar events yet."})
+        return "Ok", 200
     
-    elif request.method == 'GET':
+    elif request.method == 'GET':   #DONE-TESTED
         conn = sqlite3.connect(DATABASENAME)
-        cursor = conn.cursor(cursor_factory=sqlite3.extras.DictCursor)
-        date = request.args.get('date')
+        cursor = conn.cursor()
         
-        # next YYYY-MM-DD
-        next_date = (datetime.strptime(date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
-      
-        event = query(cursor, "SELECT * FROM calendar WHERE date > %s AND date < %s AND username = (\'%s\')", (date, next_date, id))
+        request_data = parse_qs(request.get_data().decode('utf-8'))
+        year = request_data.get('year1', [])[0]
+        month = request_data.get('month1', [])[0]
+        day = request_data.get('day1', [])[0]
+        hour = request_data.get('hours1', [])[0]
+        date = datetime(int(year), int(month), int(day), int(hour), int(0), int(0))
         
-        if event:
+        request_data = parse_qs(request.get_data().decode('utf-8'))
+        year = request_data.get('year2', [])[0]
+        month = request_data.get('month2', [])[0]
+        day = request_data.get('day2', [])[0]
+        hour = request_data.get('hours2', [])[0]
+        next_date = datetime(int(year), int(month), int(day), int(hour), int(0), int(0))
+        
+        res = query(cursor, "SELECT * FROM events WHERE date > \'%s\' AND date < \'%s\' AND username = (\'%s\')", (date, next_date, id))
+        
+        if res:
             conn.commit()
             cursor.close()
             conn.close()
-            return jsonify(event), 200
+            return jsonify(res), 200
         else:
             conn.commit()
             cursor.close()
             conn.close()
-            return jsonify({'message': 'Event not found'}), 200
+            return "No event not found", 200
     
-    elif request.method == 'DELETE':
+    elif request.method == 'DELETE':    #DONE-TESTED
         conn = sqlite3.connect(DATABASENAME)
         cursor = conn.cursor()
         
-        title = request.form["title"]
-
+        request_data = parse_qs(request.get_data().decode('utf-8'))
+        title = request_data.get('title', [])[0]
+        
         try:
-            query(cursor, "DELETE FROM calendar WHERE title = (\'%s\') AND username = (\'%s\')", (title, id))
+            query(cursor, "DELETE FROM events WHERE title = (\'%s\') AND username = (\'%s\')", (title, id))
             conn.commit()
             cursor.close()
             conn.close()
-            return jsonify({'message': 'Event deleted successfully'}), 200
+            return "Event deleted successfully", 200
         except Exception as e:
-            return jsonify({'message': 'Event not found'}), 404
+            return "Event not found", 404
     
-    return jsonify({"error": "Method not implemented"}), 501
+    return "Method not implemented", 501
 
 if __name__ == '__main__':
     SCHEMANAME = os.path.dirname(os.path.realpath(__file__)) + "/schema.sql"
