@@ -5,8 +5,8 @@ class send_email():
         self.date = date
     
     def send_reminder_emails(self, smtp_server="smtp.gmail.com", port=587,
-                             sender_email="chatearmeoscornoslbec@gmail.com", password="ppws vzzt jjau nbjc",
-                             recipient_email="pedro1jacinto.sl@gmail.com"):
+                             sender_email="railguntime@gmail.com", password="zmxp vpxg oeqf mjsl",
+                             recipient_email="daniela.farinhacardoso@gmail.com"):
         """Sends email reminders for events within the next hour.
 
         Args:
@@ -28,8 +28,8 @@ class send_email():
 
         # Create message content
         message_content = f"Upcoming event(s) within the next hour:\n"
-        if events_within_hour:
-            message_content += f"\n- {events_within_hour}\n"
+        for events in events_within_hour:
+            message_content += f"\n- {events.date}, {events.title}, {events.description}\n"
 
         # Create message (you can customize the format)
         message = f"From: {sender_email}\nSubject: Event Reminders\n\n{message_content}"
@@ -42,9 +42,10 @@ class send_email():
     
     def get_events_within_hour(self):
         events_today = self.calendar.get_events(self.date)
+        remind = []
         for event in events_today:
             if event.date.hour <= self.date.hour + 1:
-                remind = event  
+                remind.append(event)  
         return remind
 
     
